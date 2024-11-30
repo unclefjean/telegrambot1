@@ -3,6 +3,7 @@ from threading import Thread
 import time
 import requests
 import os
+app = Flask(__name__)
 
 app = Flask('')
 
