@@ -3,13 +3,12 @@ from threading import Thread
 import time
 import requests
 import os
+from flask import Flask
 app = Flask(__name__)
-
-app = Flask('')
 
 @app.route('/')
 def home():
-    return "I'm alive!"
+    return "I'm alive"
 
 def run():
     port = os.environ.get('PORT', 80)  # Используйте PORT из окружения или 80 по умолчанию
