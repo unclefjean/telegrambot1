@@ -201,7 +201,7 @@ def clear_temp_files():
 # Создание и запуск бота
 def main():
     application = ApplicationBuilder().token(
-        "YOUR_BOT_TOKEN").build()
+        "7814014008:AAHXEAuNW5RP7AUbS2CUdgdNglXJKE82aCw").build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
