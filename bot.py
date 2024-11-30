@@ -239,6 +239,6 @@ def main():
     logger.info("Бот запущен.")
     application.run_polling()
 
-keep_alive()
 if __name__ == "__main__":
+    keep_alive()
     main()
