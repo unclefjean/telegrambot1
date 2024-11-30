@@ -1,43 +1,40 @@
-from flask import Flask, request
-from telegram import Bot, Update
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackContext
+from flask import Flask
+from flask import request
 from threading import Thread
-import os
+import time
+import requests
 
-# Инициализация Flask
-app = Flask(__name__)
+app = Flask('')
 
-# Токен вашего бота
-bot_token = "7814014008:AAHXEAuNW5RP7AUbS2CUdgdNglXJKE82aCw"
-bot = Bot(token=bot_token)
 
-# Создаем экземпляр Application, который будет использоваться для бота
-application = ApplicationBuilder().token(bot_token).build()
+@app.route('/')
+def home():
+  return "I'm alive"
 
-# Простая команда, которая будет отправляться при вызове /start
-async def start(update: Update, context: CallbackContext):
-    await update.message.reply_text("Привет! Я твой бот для обработки файлов.")
 
-# Добавляем обработчик для команды /start
-application.add_handler(CommandHandler("start", start))
-
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    if request.method == 'POST':
-        update = request.get_json()
-        print(update)  # Добавьте это для дебага
-        update_obj = Update.de_json(update, bot)
-        application.process_update(update_obj)
-        return 'OK', 200
-
-# Функция для запуска Flask сервера
 def run():
-    app.run(host='0.0.0.0', port=80)
+  app.run(host='0.0.0.0', port=80)
 
-# Функция для запуска сервера в отдельном потоке
+
 def keep_alive():
-    t = Thread(target=run)
-    t.start()
+  t = Thread(target=run)
+  t.start()
+
+
+def ping_self():
+  while True:
+    try:
+      requests.get(
+          "https://22bea987-f52f-4ef8-9020-6b4089dcb8cc-00-isplf5f9wlnr.pike.replit.dev/"
+      )
+      print("Self-ping successful")
+    except Exception as e:
+      print(f"Self-ping failed: {e}")
+    time.sleep(240)  # Каждые 4 минуты
+
 
 if __name__ == "__main__":
-    keep_alive()
+  t1 = Thread(target=run)
+  t2 = Thread(target=ping_self)
+  t1.start()
+  t2.start()
