@@ -6,11 +6,13 @@ import logging
 import fitz  # PyMuPDF
 import uuid  # Для генерации случайных имен
 import requests
+from background import keep_alive
 from flask import Flask
 from threading import Thread
 import time
+import requests
+import os
 
-# Инициализация Flask-приложения
 app = Flask(__name__)
 
 @app.route('/')
@@ -26,7 +28,7 @@ def ping_self():
     while True:
         try:
             # Замените на ваш актуальный URL на платформе Render
-            requests.get("https://telegrambot1-wnh7.onrender.com/")  # Измените на свой URL
+            requests.get("https://telegrambot1-wnh7.onrender.com/")
             print("Self-ping successful")
         except Exception as e:
             print(f"Self-ping failed: {e}")
@@ -51,6 +53,7 @@ processed_files = []
 TEMP_DIR = "temp"
 os.makedirs(TEMP_DIR, exist_ok=True)
 
+
 # Функция для вырезания накладной
 def extract_invoice(file_path: str) -> str:
     logger.info(f"Начата обработка файла: {file_path}")
@@ -60,10 +63,14 @@ def extract_invoice(file_path: str) -> str:
 
     for page_num in range(len(pdf_document)):
         page = pdf_document[page_num]
+        # Определяем размеры страницы
         page_width, page_height = page.rect.width, page.rect.height
+        # Параметры сетки
         grid_width = page_width / 2
         grid_height = page_height / 2
+        # Координаты первой сетки
         invoice_rect = fitz.Rect(0, 0, grid_width, grid_height)
+        # Вырезаем область накладной
         invoice_page = output_document.new_page(width=invoice_rect.width,
                                                 height=invoice_rect.height)
         invoice_page.show_pdf_page(invoice_page.rect,
@@ -71,12 +78,14 @@ def extract_invoice(file_path: str) -> str:
                                    page_num,
                                    clip=invoice_rect)
 
+    # Сохраняем обработанный PDF
     output_document.save(output_file)
     pdf_document.close()
     output_document.close()
 
     logger.info(f"Файл обработан и сохранён: {output_file}")
     return output_file
+
 
 # Функция для объединения PDF-файлов
 def combine_pdfs(input_files: list, output_file: str):
@@ -92,6 +101,7 @@ def combine_pdfs(input_files: list, output_file: str):
     output_document.close()
     logger.info(f"Файлы успешно объединены: {output_file}")
 
+
 # Команда /start
 async def start(update: Update, context: CallbackContext):
     await update.message.reply_text(
@@ -102,6 +112,7 @@ async def start(update: Update, context: CallbackContext):
         "Используйте /combine чтобы объединить все обработанные файлы(PDF или ZIP-архив) в один PDF-файл."
     )
 
+
 # Команда /help
 async def help_command(update: Update, context: CallbackContext):
     await update.message.reply_text(
@@ -110,6 +121,7 @@ async def help_command(update: Update, context: CallbackContext):
         "/combine - Объединить обработанные файлы в один PDF.\n\n"
         "📩 **Обратная связь и коммерческие предложения:**\n"
         "Свяжитесь со мной по номеру: +77011254287")
+
 
 # Обработка PDF-файлов
 async def handle_document(update: Update, context: CallbackContext):
@@ -140,6 +152,7 @@ async def handle_document(update: Update, context: CallbackContext):
         logger.error(f"Ошибка при обработке файла: {e}")
         await update.message.reply_text(f"Произошла ошибка: {e}")
 
+
 # Распаковка ZIP-архива
 def extract_zip(zip_file_path: str) -> list:
     logger.info(f"Распаковка ZIP-архива: {zip_file_path}")
@@ -152,18 +165,27 @@ def extract_zip(zip_file_path: str) -> list:
                         TEMP_DIR, f"extracted_{uuid.uuid4().hex}.pdf")
                     with open(extracted_path, "wb") as f:
                         f.write(archive.read(file_name))
+                    # Обработка каждого PDF-файла из архива
                     processed_file_path = extract_invoice(extracted_path)
                     extracted_files.append(processed_file_path)
+                    # Добавление в глобальный список
                     processed_files.append(processed_file_path)
     except Exception as e:
         logger.error(f"Ошибка при распаковке ZIP-архива: {e}")
     return extracted_files
 
-# Генерация случайного имени файла
+
+import random
+import string
+
+
+# Функция для генерации случайного имени файла
 def generate_random_filename(extension="pdf") -> str:
     random_string = ''.join(
-        random.choices(string.ascii_letters + string.digits, k=10))
+        random.choices(string.ascii_letters + string.digits,
+                       k=10))  # 10 случайных символов
     return f"{random_string}.{extension}"
+
 
 # Команда /combine
 async def combine(update: Update, context: CallbackContext):
@@ -174,10 +196,12 @@ async def combine(update: Update, context: CallbackContext):
         return
 
     try:
+        # Генерация пути к файлу с уникальным именем
         output_file_path = os.path.join(TEMP_DIR,
                                         f"combined_{uuid.uuid4().hex}.pdf")
         combine_pdfs(processed_files, output_file_path)
 
+        # Генерация случайного имени для отправляемого файла
         random_filename = generate_random_filename()
 
         with open(output_file_path, "rb") as output_file:
@@ -186,9 +210,11 @@ async def combine(update: Update, context: CallbackContext):
 
     except Exception as e:
         logger.error(f"Ошибка при объединении файлов: {e}")
-        await update.message.reply_text(f"Произошла ошибка при объединении: {e}")
+        await update.message.reply_text(
+            f"Произошла ошибка при объединении: {e}")
     finally:
         clear_temp_files()
+
 
 # Очистка временных файлов
 def clear_temp_files():
@@ -198,6 +224,7 @@ def clear_temp_files():
             os.remove(os.path.join(root, file))
     processed_files.clear()
 
+
 # Создание и запуск бота
 def main():
     application = ApplicationBuilder().token(
@@ -206,12 +233,12 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("combine", combine))
-    application.add_handler(MessageHandler(filters.Document.ALL, handle_document))
+    application.add_handler(
+        MessageHandler(filters.Document.ALL, handle_document))
 
     logger.info("Бот запущен.")
     application.run_polling()
 
-# Запуск Flask и Telegram бота
 keep_alive()
 if __name__ == "__main__":
     main()
