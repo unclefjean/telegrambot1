@@ -19,6 +19,12 @@ app = Flask(__name__)
 def home():
     return "I'm alive"
 
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), application.bot)
+    application.process_update(update)
+    return "OK", 200
+
 def run():
     # Получаем порт из окружения Render, если его нет — ставим 80 по умолчанию
     port = os.environ.get('PORT', 80)
@@ -35,10 +41,8 @@ def ping_self():
         time.sleep(240)  # Пинг каждые 4 минуты
 
 def keep_alive():
-    t1 = Thread(target=run)
-    t2 = Thread(target=ping_self)
-    t1.start()
-    t2.start()
+    thread = Thread(target=run)
+    thread.start()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -226,18 +230,18 @@ def clear_temp_files():
 
 
 # Создание и запуск бота
-def main():
-    application = ApplicationBuilder().token(
-        "7814014008:AAHXEAuNW5RP7AUbS2CUdgdNglXJKE82aCw").build()
+WEBHOOK_URL = "https://telegrambot1-wnh7.onrender.com/webhook"
 
+def main():
+    application = ApplicationBuilder().token("ВАШ_ТОКЕН").build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("combine", combine))
-    application.add_handler(
-        MessageHandler(filters.Document.ALL, handle_document))
+    application.add_handler(MessageHandler(filters.Document.ALL, handle_document))
 
-    logger.info("Бот запущен.")
-    application.run_polling()
+    # Устанавливаем вебхук
+    application.bot.set_webhook(WEBHOOK_URL)
+    logger.info("Бот запущен с использованием вебхуков.")
 
 if __name__ == "__main__":
     keep_alive()
