@@ -19,7 +19,7 @@ def ping_self():
     while True:
         try:
             # Замените на ваш актуальный URL на платформе Render
-            requests.get("https://<your-app-name>.onrender.com/")
+            requests.get("https://telegrambot1-wnh7.onrender.com/")
             print("Self-ping successful")
         except Exception as e:
             print(f"Self-ping failed: {e}")
