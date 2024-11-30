@@ -7,7 +7,6 @@ import fitz  # PyMuPDF
 import uuid  # Для генерации случайных имен
 import requests
 from background import keep_alive
-
 from flask import Flask
 from threading import Thread
 import time
@@ -40,8 +39,6 @@ def keep_alive():
     t2 = Thread(target=ping_self)
     t1.start()
     t2.start()
-
-
 
 logging.basicConfig(
     level=logging.INFO,
